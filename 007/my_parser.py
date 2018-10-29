@@ -77,10 +77,10 @@ class CommandParser:
      
     def run_loader(self):
         if self.namespace.user:
-            print ("Привет, {}!".format (namespace.user) )
+            print ("Привет, {}!".format (self.namespace.user) )
             return True
         elif self.namespace.id: 
-            print  ("Привет, {}!".format (namespace.id) )
+            print  ("Привет, {}!".format (self.namespace.id) )
             return True
         return False
 
