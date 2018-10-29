@@ -1,5 +1,5 @@
 import argparse
-
+from datarequests import VkRequests
 
 class CommandParser:
     def __init__(self):
@@ -76,13 +76,14 @@ class CommandParser:
             print(self.file_name)
      
     def run_loader(self):
+        if not (self.namespace.user or self.namespace.id):
+            return False
         if self.namespace.user:
-            print ("Привет, {}!".format (self.namespace.user) )
-            return True
-        elif self.namespace.id: 
-            print  ("Привет, {}!".format (self.namespace.id) )
-            return True
-        return False
+            vk_request = VkRequests(user_name = self.namespace.user)
+        else: 
+            vk_request = VkRequests(user_id = self.namespace.id)
+        vk_request.get_friends_from_request()
+        return True
 
 
 
