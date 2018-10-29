@@ -34,7 +34,7 @@ class VkRequests:
         return '?'.join((self.AUTH_SERVER, urllib.parse.urlencode(auth_data)))
 
     def error_handler(self, f):
-        def wrapper (*args, **kwargs):
+        def wrapper (self, *args, **kwargs):
             dict = f(*args, **kwargs)
             if 'error' in dict:
               print(dict['error']['error_msg'])
@@ -48,7 +48,7 @@ class VkRequests:
         dict_from_request = requests_data.json()
         return dict_from_request
 
-    def get_user_id_from_request(self,user_name):
+    def get_user_id_from_request(self, user_name):
         users_get_params = {
             'user_id': user_name,
             'v': self.API_VERSION
