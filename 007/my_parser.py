@@ -79,10 +79,12 @@ class CommandParser:
         if not (self.namespace.user or self.namespace.id):
             return False
         if self.namespace.user:
-            vk_request = VkRequests(user_name = self.namespace.user)
+            vk_request = VkRequests(user_name="eshmargunov")#user_name = self.namespace.user)
         else: 
-            vk_request = VkRequests(user_id = self.namespace.id)
-        vk_request.get_friends_from_request()
+            vk_request = VkRequests(user_id = 171691064)#user_id = self.namespace.id)
+        vk_request.error_handler(vk_request.get_friends_from_request())
+        vk_request.error_handler(vk_request.get_groups_from_request())#16232197))
+        vk_request.error_handler(vk_request.get_group_data_from_request(101522128))
         return True
 
 
