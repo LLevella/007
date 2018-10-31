@@ -49,7 +49,7 @@ class VkRequests:
     
     def get_user_id_from_request(self, user_name):
         users_get_params = {
-            'user_id': user_name,
+            'user_ids': user_name,
             'access_token': self.TOKEN,
             'v': self.API_VERSION
             }
@@ -58,14 +58,13 @@ class VkRequests:
         user_id_dict = get_dict_for_load_data(user_server, users_get_params)
         
         if self.error_handler(user_id_dict):
-          return 0
+            return user_id_tmp
 
         if user_id_dict['response']:
             if user_id_dict['response'][0]:
                 if user_id_dict['response'][0]['id']:
                     user_id_tmp =  user_id_dict['response'][0]['id']
-            elif user_id_dict['response']['id']:
-                user_id_tmp = user_id_dict['response']['id']
+        
         return user_id_tmp
 
     def get_friends_from_request(self):
