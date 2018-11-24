@@ -39,10 +39,6 @@ class DataLoader:
         if self.requester.error_handler(friends_dict):
             return False
         friends_count, friends_list = get_list_and_count_from_dict(friends_dict)
-        print("++++++++++++++")
-        print(friends_count)
-        print(friends_list)
-        print("++++++++++++++")
         if not friends_count or not friends_list:
             return False
         self.friends = friends_list
@@ -53,8 +49,6 @@ class DataLoader:
         if self.requester.error_handler(user_groups_dict):
             return False
         user_groups_count, user_groups_set = get_set_and_count_from_dict(user_groups_dict)
-        print(user_groups_count)
-        print(user_groups_set)
         if not user_groups_count or not user_groups_set:
             return False
         self.user_groups = user_groups_set

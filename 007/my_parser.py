@@ -14,7 +14,6 @@ class CommandParser:
         # Вызов помощи 
         parent_group = self.parser.add_argument_group (title='Параметры')
         parent_group.add_argument ('--help', '-h', action='help', help='Справка')
-    
         
         subparsers = self.parser.add_subparsers (dest = 'command',
                 title = 'Возможные команды')
@@ -53,6 +52,7 @@ class CommandParser:
         self.namespace = self.parser.parse_args(*args)
 
         if (not self.namespace) or (not self.namespace.command):
+            print("Возможные аргументы:\n infile (-i/-u/-h) \n onscreen (-i/-u/-h)")
             return False
 
         if self.namespace.command == "infile":
