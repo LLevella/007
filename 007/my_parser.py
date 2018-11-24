@@ -1,5 +1,7 @@
 import argparse
+
 from datarequests import VkRequests
+from dataloader import DataLoader
 
 class CommandParser:
     def __init__(self):
@@ -82,9 +84,8 @@ class CommandParser:
             vk_request = VkRequests(user_name="eshmargunov")#user_name = self.namespace.user)
         else: 
             vk_request = VkRequests(user_id = 171691064)#user_id = self.namespace.id)
-        vk_request.error_handler(vk_request.get_friends_from_request())
-        vk_request.error_handler(vk_request.get_groups_from_request())#16232197))
-        vk_request.error_handler(vk_request.get_group_data_from_request(101522128))
+        data_loader = DataLoader(vk_request)
+        data_loader.load()
         return True
 
 

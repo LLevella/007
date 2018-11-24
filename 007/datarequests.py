@@ -4,11 +4,31 @@ import urllib
 import json
 import pprint
 import sys
+import time
 
 def get_dict_for_load_data(server_name, params_data):
-    requests_data = requests.get(server_name, params=params_data)
-    dict_from_request = requests_data.json()
-    return dict_from_request
+    sec = 1 
+    nsec = 4
+    while 1:
+        try:
+            requests_data = requests.get(server_name, params=params_data)
+        except requests.exceptions.ConnectionError:
+            time.sleep(sec)
+            sec += 1 
+        except requests.exceptions.Timeout:
+            time.sleep(sec)
+            sec += 1
+        except requests.exceptions.RequestException as e:
+            print(e)
+            return  
+        else:
+            dict_from_request = requests_data.json()
+            return dict_from_request
+        finally:
+            if sec > nsec:
+                return
+    
+
 
 
 class VkRequests:
@@ -40,11 +60,13 @@ class VkRequests:
         return '?'.join((self.AUTH_SERVER, urllib.parse.urlencode(auth_data)))
 
     def error_handler(self, dict):
+        if not dict:
+            print("Request Exeption")
+            return True
         if 'error' in dict:
             print(dict['error']['error_msg'])
-            print('Пройдите по адресу для получения токена: {}'.format(self.create_straddres_for_token_extraction()))
             return True
-        print(dict)
+        # print(dict)
         return False
     
     def get_user_id_from_request(self, user_name):
@@ -58,6 +80,7 @@ class VkRequests:
         user_id_dict = get_dict_for_load_data(user_server, users_get_params)
         
         if self.error_handler(user_id_dict):
+            print('Пройдите по адресу для получения токена: {}'.format(self.create_straddres_for_token_extraction()))
             return user_id_tmp
 
         if user_id_dict['response']:
@@ -77,14 +100,15 @@ class VkRequests:
         self.users_friends_id_dict = get_dict_for_load_data(friends_server, friends_get_params)
         return self.users_friends_id_dict
 
-    def get_groups_from_request(self, user_id = 0, count = 1000):
+    def get_groups_from_request(self, user_id = 0, count = 1000, extended = 0):
         if not user_id or user_id == 0:
           user_id = self.user_id
         groups_get_params = {
             'user_id': user_id,
             'access_token': self.TOKEN,
             'v': self.API_VERSION,
-            'count': count
+            'count': count,
+            'extended': extended
             }
         groups_server = self.API_SERVER + self.GROUPS_METHOD
         self.users_groups_id_dict = get_dict_for_load_data(groups_server, groups_get_params)
