@@ -81,9 +81,9 @@ class CommandParser:
         if not (self.namespace.user or self.namespace.id):
             return False
         if self.namespace.user:
-            vk_request = VkRequests(user_name="eshmargunov")#user_name = self.namespace.user)
+            vk_request = VkRequests(user_name = self.namespace.user)
         else: 
-            vk_request = VkRequests(user_id = 171691064)#user_id = self.namespace.id)
+            vk_request = VkRequests(user_id = self.namespace.id)
         data_loader = DataLoader(vk_request)
         data_loader.load()
         return True
