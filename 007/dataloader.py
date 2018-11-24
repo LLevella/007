@@ -25,7 +25,6 @@ def get_list_and_count_from_dict(cur_dict):
     
 def get_set_and_count_from_dict(cur_dict):
     count_tmp = count_points_in_dict(cur_dict)
-    print(count_tmp)
     set_tmp = set(list_from_dict(cur_dict))
     return count_tmp, set_tmp
 
@@ -35,7 +34,7 @@ class DataLoader:
 
     def load(self):
         friends_dict = self.requester.get_friends_from_request()
-        print(friends_dict)
+        print("Загружен список друзей")
         if self.requester.error_handler(friends_dict):
             return False
         friends_count, friends_list = get_list_and_count_from_dict(friends_dict)
@@ -45,7 +44,7 @@ class DataLoader:
         self.friends_count = friends_count
         
         user_groups_dict = self.requester.get_groups_from_request()
-        print(user_groups_dict)
+        print("Заугржен список групп пользователя")
         if self.requester.error_handler(user_groups_dict):
             return False
         user_groups_count, user_groups_set = get_set_and_count_from_dict(user_groups_dict)
