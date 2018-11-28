@@ -19,8 +19,12 @@ def get_dict_for_load_data(server_name, params_data):
             time.sleep(sec)
             sec += 1
         except requests.exceptions.RequestException as e:
-            print(e)
-            return  
+            if sec > nsec:
+                print(e)
+                return  
+            else:
+                time.sleep(sec)
+                sec += 1
         else:
             dict_from_request = requests_data.json()
             return dict_from_request
@@ -56,13 +60,13 @@ class VkRequests:
             }
         return '?'.join((self.AUTH_SERVER, urllib.parse.urlencode(auth_data)))
 
-    def error_handler(self, dict):
+    def error_handler(self, dict, end= ""):
         if not dict:
-            print("\r\x1b[K Request Exeption", end= "")
+            print("\r\x1b[K Request Exeption", end)
             sys.stdout.flush()
             return True
         if 'error' in dict:
-            print("\r\x1b[K {}".format(dict['error']['error_msg']), end= "")
+            print("\r\x1b[K {}".format(dict['error']['error_msg']), end)
             sys.stdout.flush()
             return True
         # print(dict)

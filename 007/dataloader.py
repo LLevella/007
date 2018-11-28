@@ -73,6 +73,8 @@ class DataLoader:
         self.print_data_with_lock("Intersections_handler закончил обработку")
             
     def count_users_in_acrossing_groups(self, groups_intersection):
+        if groups_intersection:
+            self.print_data_with_lock(groups_intersection)
         for group in groups_intersection:
                 self.groups_dict[group] += 1
 
@@ -91,7 +93,7 @@ class DataLoader:
     def init_load(self):
         friends_dict = self.requester.get_friends_from_request()
         print("Загружен список друзей")
-        if self.requester.error_handler(friends_dict):
+        if self.requester.error_handler(friends_dict, end= "\n"):
             return False
         friends_count, friends_list = get_list_and_count_from_dict(friends_dict)
         if not friends_count or not friends_list:
@@ -101,7 +103,7 @@ class DataLoader:
         
         user_groups_dict = self.requester.get_groups_from_request()
         print("Заугржен список групп пользователя")
-        if self.requester.error_handler(user_groups_dict):
+        if self.requester.error_handler(user_groups_dict, end= "\n"):
             return False
         user_groups_count, user_groups_set = get_set_and_count_from_dict(user_groups_dict)
         if not user_groups_count or not user_groups_set:
@@ -168,7 +170,7 @@ class DataLoader:
     def result_of_intersection(self, N = 10, eqv = "<"):
         str_inter = self.get_intersection(N, eqv)
         inter_groups_dict = self.requester.get_group_data_from_request(str_inter)
-        if self.requester.error_handler(inter_groups_dict):
+        if self.requester.error_handler(inter_groups_dict, end= "\n"):
             return 
         return inter_groups_dict
 
@@ -178,6 +180,6 @@ class DataLoader:
     def result_of_defferencial(self):
       str_diff = self.get_differ_str()
       diff_groups_dict = self.requester.get_group_data_from_request(str_diff)
-      if self.requester.error_handler(diff_groups_dict):
+      if self.requester.error_handler(diff_groups_dict, end= "\n"):
           return 
       return diff_groups_dict
