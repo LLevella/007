@@ -81,12 +81,20 @@ class CommandParser:
         if not (self.namespace.user or self.namespace.id):
             return False
         if self.namespace.user:
-            vk_request = VkRequests(user_name = self.namespace.user)
+            self.vk_request = VkRequests(user_name = self.namespace.user)
         else: 
-            vk_request = VkRequests(user_id = self.namespace.id)
-        data_loader = DataLoader(vk_request)
-        data_loader.load()
+            self.vk_request = VkRequests(user_id = self.namespace.id)
+        self.data_loader = DataLoader(self.vk_request)
+        self.data_loader.mp_load()
         return True
+    
+#    def write_result(self, N = 10):
+#        dict = self.data_loader.get_intersection()
+#        set = self. get_differ()
+#        if not self.file_name:
+#            self.write_result_onscreen(N)
+#        else:
+#            self.write_result_infile()
 
 
 

@@ -61,10 +61,12 @@ class VkRequests:
 
     def error_handler(self, dict):
         if not dict:
-            print("Request Exeption")
+            print("\r\x1b[K Request Exeption", end= "")
+            sys.stdout.flush()
             return True
         if 'error' in dict:
-            print(dict['error']['error_msg'])
+            print("\r\x1b[K {}".format(dict['error']['error_msg']), end= "")
+            sys.stdout.flush()
             return True
         # print(dict)
         return False
