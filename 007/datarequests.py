@@ -8,7 +8,7 @@ import time
 
 def get_dict_for_load_data(server_name, params_data):
     sec = 1 
-    nsec = 4
+    nsec = 6
     while 1:
         try:
             requests_data = requests.get(server_name, params=params_data)
@@ -116,9 +116,11 @@ class VkRequests:
         self.users_groups_id_dict = get_dict_for_load_data(groups_server, groups_get_params)
         return self.users_groups_id_dict
 
-    def get_group_data_from_request(self, group_id = 0):
+    def get_group_data_from_request(self, sgroup_ids = ""):
+        if not sgroup_ids:
+            return
         groups_get_params = {
-            'group_id': group_id,
+            'group_ids': sgroup_ids,
             'access_token': self.TOKEN,
             'v': self.API_VERSION
             }

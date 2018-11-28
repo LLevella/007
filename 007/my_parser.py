@@ -1,4 +1,5 @@
 import argparse
+from pprint import pprint
 
 from datarequests import VkRequests
 from dataloader import DataLoader
@@ -61,6 +62,7 @@ class CommandParser:
         if not self.run_loader():
             print("!\tЗапуск загрузки данных без параметров невозможен")
             return False
+        self.write_result()
         return True
 
     def get_file_name(self):
@@ -81,22 +83,34 @@ class CommandParser:
         if not (self.namespace.user or self.namespace.id):
             return False
         if self.namespace.user:
-            self.vk_request = VkRequests(user_name = self.namespace.user)
+            vk_request = VkRequests(user_name = self.namespace.user)
         else: 
-            self.vk_request = VkRequests(user_id = self.namespace.id)
-        self.data_loader = DataLoader(self.vk_request)
+            vk_request = VkRequests(user_id = self.namespace.id)
+        self.data_loader = DataLoader(vk_request)
         self.data_loader.mp_load()
         return True
     
-#    def write_result(self, N = 10):
-#        dict = self.data_loader.get_intersection()
-#        set = self. get_differ()
-#        if not self.file_name:
-#            self.write_result_onscreen(N)
-#        else:
-#            self.write_result_infile()
+    def write_result(self):
+        intersec = self.data_loader.result_of_intersection(N = 10, eqv = "<")
+        diff = self.data_loader.result_of_defferencial()
+        if not self.file_name:
+            self.write_result_onscreen(intersec, diff,  N = 10, eqv = "<")
+        else:
+            self.write_result_infile(intersec, diff,  N = 10, eqv = "" )
 
+    def write_result_onscreen(self, intersec, diff, N = 10, eqv = "<" ):
+        print("Группы, в которых нет никого из друзей пользователя:")
+        pprint(diff)
+        print("Группы, в которых {} {} друзей:".format(eqv, N))
+        pprint(intersec)
 
+    def write_result_infile(self, intersec, diff, N = 10, eqv = "<" ):
+      with open(self.file_name, 'wt') as outintersect:
+          pprint(intersec, stream=outintersect)
+      print("Группы, в которых нет никого из друзей пользователя, в файле: {}".format(self.file_name))
+      with open("Nles10"+self.file_name, 'wt') as outdiff:
+          pprint(diff, stream=outdiff)
+      print("Группы, в которых {} {} друзей, в файле: {}".format(eqv, N, "Nles10" + self.file_name))
 
 
 

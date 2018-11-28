@@ -88,7 +88,7 @@ class DataLoader:
         if is_flush:
             sys.stdout.flush()
 
-    def load(self):
+    def init_load(self):
         friends_dict = self.requester.get_friends_from_request()
         print("Загружен список друзей")
         if self.requester.error_handler(friends_dict):
@@ -110,7 +110,10 @@ class DataLoader:
         self.user_groups_count = user_groups_count
         self.groups_differ = user_groups_set
         self.groups_dict = dict.fromkeys(user_groups_set, 0)
-        
+
+
+    def load(self): # последовательная процедура
+        self.init_load()        
         for friend in self.friends:
             # print(friend)
             user_groups_dict = self.requester.get_groups_from_request(friend)
@@ -126,29 +129,8 @@ class DataLoader:
             print("\r\x1b[K друзей осталось {}".format(friends_count), end= "")
             sys.stdout.flush()
 
-    def mp_load(self):
-        friends_dict = self.requester.get_friends_from_request()
-        print("Загружен список друзей")
-        if self.requester.error_handler(friends_dict):
-            return False
-        friends_count, friends_list = get_list_and_count_from_dict(friends_dict)
-        if not friends_count or not friends_list:
-            return False
-        self.friends = friends_list
-        self.friends_count = 1 #friends_count
-        
-        user_groups_dict = self.requester.get_groups_from_request()
-        print("Заугржен список групп пользователя")
-        if self.requester.error_handler(user_groups_dict):
-            return False
-        user_groups_count, user_groups_set = get_set_and_count_from_dict(user_groups_dict)
-        if not user_groups_count or not user_groups_set:
-            return False
-        self.user_groups = user_groups_set
-        self.user_groups_count = user_groups_count
-        self.groups_differ = user_groups_set
-        self.groups_dict = dict.fromkeys(user_groups_set, 0)
-        
+    def mp_load(self): # мультипроцессная 
+        self.init_load()
         procs = []
         
         proc_load = Process(target=self.loader, args=())
@@ -166,8 +148,33 @@ class DataLoader:
         for proc in procs:
             proc.join()
 
-    def get_intersection(self):
-        return self.groups_dict
+    def get_intersection(self, N = 10, eqv = "<"):
+        if (eqv == "="):
+            str_group_ids = ', '.join(str(s) for s in self.groups_dict.keys() if self.groups_dict[s] == N)
+        if (eqv == ">"):
+            str_group_ids = ', '.join(str(s) for s in self.groups_dict.keys() if self.groups_dict[s] > N)
+        if (eqv == "<"):
+            str_group_ids = ', '.join(str(s) for s in self.groups_dict.keys() if self.groups_dict[s] < N)
+        if (eqv == ">="):
+            str_group_ids = ', '.join(str(s) for s in self.groups_dict.keys() if self.groups_dict[s] >= N)
+        if (eqv == "<="):
+            str_group_ids = ', '.join(str(s) for s in self.groups_dict.keys() if self.groups_dict[s] <= N)
+        return str_group_ids
 
-    def get_differ(self):
-        return self.groups_differ
+    def get_differ_str(self):
+        str_group_ids = ', '.join(str(s) for s in self.user_groups)
+        return str_group_ids
+
+    def result_of_intersection(self, N = 10, eqv = "<"):
+        str_inter = self.get_intersection(N = 10, eqv = "<")
+        inter_groups_dict = self.requester.get_group_data_from_request(str_inter)
+        if self.requester.error_handler(inter_groups_dict):
+            return 
+        return inter_groups_dict
+    
+    def result_of_defferencial(self):
+      str_diff = self.get_differ_str()
+      diff_groups_dict = self.requester.get_group_data_from_request(str_diff)
+      if self.requester.error_handler(diff_groups_dict):
+          return 
+      return diff_groups_dict
