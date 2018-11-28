@@ -59,8 +59,8 @@ class DataLoader:
             user_groups_set = self.groups.get()
             if user_groups_set == "END":
                 break
-            self.groups_differ -= user_groups_set
-            self.groups_intersections.put(self.user_groups & user_groups_set)
+            self.groups_differ.difference_update(user_groups_set)
+            self.groups_intersections.put(self.user_groups.intersection(user_groups_set))
         self.groups_intersections.put("END")
         self.print_data_with_lock("Groups_handler закончил обработку")
 
@@ -76,10 +76,10 @@ class DataLoader:
         for group in groups_intersection:
                 self.groups_dict[group] += 1
 
-    def print_data_with_lock(self, str="", eqv = "", is_flush = False):
+    def print_data_with_lock(self, str="", eqv = "", end = "\n", is_flush = False):
         self.lock.acquire()
         try:
-            self.print_data_without_lock(str, eqv, is_flush = False)
+            self.print_data_without_lock(str, eqv, end, is_flush)
         finally:
             self.lock.release()
     
@@ -110,7 +110,6 @@ class DataLoader:
         self.user_groups_count = user_groups_count
         self.groups_differ = user_groups_set
         self.groups_dict = dict.fromkeys(user_groups_set, 0)
-
 
     def load(self): # последовательная процедура
         self.init_load()        
@@ -149,6 +148,7 @@ class DataLoader:
             proc.join()
 
     def get_intersection(self, N = 10, eqv = "<"):
+        str_group_ids = ""
         if (eqv == "="):
             str_group_ids = ', '.join(str(s) for s in self.groups_dict.keys() if self.groups_dict[s] == N)
         if (eqv == ">"):
@@ -162,15 +162,18 @@ class DataLoader:
         return str_group_ids
 
     def get_differ_str(self):
-        str_group_ids = ', '.join(str(s) for s in self.user_groups)
+        str_group_ids = ', '.join(str(s) for s in self.groups_differ)
         return str_group_ids
 
     def result_of_intersection(self, N = 10, eqv = "<"):
-        str_inter = self.get_intersection(N = 10, eqv = "<")
+        str_inter = self.get_intersection(N, eqv)
         inter_groups_dict = self.requester.get_group_data_from_request(str_inter)
         if self.requester.error_handler(inter_groups_dict):
             return 
         return inter_groups_dict
+
+    def result_dict_of_intersection(self):
+      return self.groups_dict
     
     def result_of_defferencial(self):
       str_diff = self.get_differ_str()

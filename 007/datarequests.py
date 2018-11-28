@@ -27,9 +27,6 @@ def get_dict_for_load_data(server_name, params_data):
         finally:
             if sec > nsec:
                 return
-    
-
-
 
 class VkRequests:
     APP_ID = '6633040'
