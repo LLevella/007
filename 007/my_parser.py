@@ -108,9 +108,9 @@ class CommandParser:
       with open(self.file_name, 'wt') as outintersect:
           pprint(intersec, stream=outintersect)
       print("Группы, в которых нет никого из друзей пользователя, в файле: {}".format(self.file_name))
-      with open("Nles10"+self.file_name, 'wt') as outdiff:
+      with open("Nles10-"+self.file_name, 'wt') as outdiff:
           pprint(diff, stream=outdiff)
-      print("Группы, в которых {} {} друзей, в файле: {}".format(eqv, N, "Nles10" + self.file_name))
+      print("Группы, в которых {} {} друзей, в файле: {}".format(eqv, N, "Nles10-" + self.file_name))
 
 
 
