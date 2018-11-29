@@ -1,4 +1,3 @@
-
 import requests
 import urllib
 import json
@@ -6,31 +5,67 @@ import pprint
 import sys
 import time
 
-def get_dict_for_load_data(server_name, params_data):
-    sec = 1 
-    nsec = 6
-    while 1:
+SEC = 1
+NSEC = 10
+
+def sleeper(sec):
+    time.sleep(sec)
+    return sec + 1
+
+def error_handler(dict, end= ""):
+    if not dict:
+        print("\r\x1b[K Request Exeption", end)
+        sys.stdout.flush()
+        return True, 0
+    if 'error' in dict:
+        print("\r\x1b[K {}".format(dict['error']['error_msg']), end)
+        sys.stdout.flush()
+        return True, dict['error']['error_code']
+    return False, 0
+
+
+def request_decorator (func_request):
+    def wrapper(*args, **kwargs):
+        sec = SEC
+        nsec = NSEC
+        while sec < nsec:
+            req_dict = func_request(*args, **kwargs)
+            # print(dict)
+            has_error, error_code = error_handler(req_dict)
+            if has_error: 
+                if error_code!= 6:
+                    return 
+            else:
+                return req_dict
+            sec = sleeper(sec)
+            print("request_decorator: {}".format(sec))
+        return 
+    return wrapper
+    
+@request_decorator
+def get_dict_for_load_data(server_name, params_data,  end= ""):
+    sec = SEC 
+    nsec = NSEC
+    while sec < nsec:
         try:
             requests_data = requests.get(server_name, params=params_data)
-        except requests.exceptions.ConnectionError:
-            time.sleep(sec)
-            sec += 1 
-        except requests.exceptions.Timeout:
-            time.sleep(sec)
-            sec += 1
+        except requests.exceptions.ConnectionError as e:
+            print("\r\x1b[K {}".format(e), end)
+            sys.stdout.flush()
+            sec = sleeper(sec)
+        except requests.exceptions.Timeout as e:
+            print("\r\x1b[K {}".format(e), end)
+            sys.stdout.flush()
+            sec = sleeper(sec)
         except requests.exceptions.RequestException as e:
-            if sec > nsec:
-                print(e)
-                return  
-            else:
-                time.sleep(sec)
-                sec += 1
+            print("\r\x1b[K {}".format(e), end)
+            sys.stdout.flush()
+            sec = sleeper(sec)
         else:
             dict_from_request = requests_data.json()
             return dict_from_request
-        finally:
-            if sec > nsec:
-                return
+        print("get_dict_for_load_data: {}".format(sec))
+    return 
 
 class VkRequests:
     APP_ID = '6633040'
@@ -60,18 +95,6 @@ class VkRequests:
             }
         return '?'.join((self.AUTH_SERVER, urllib.parse.urlencode(auth_data)))
 
-    def error_handler(self, dict, end= ""):
-        if not dict:
-            print("\r\x1b[K Request Exeption", end)
-            sys.stdout.flush()
-            return True
-        if 'error' in dict:
-            print("\r\x1b[K {}".format(dict['error']['error_msg']), end)
-            sys.stdout.flush()
-            return True
-        # print(dict)
-        return False
-    
     def get_user_id_from_request(self, user_name):
         users_get_params = {
             'user_ids': user_name,
@@ -82,7 +105,7 @@ class VkRequests:
         user_server = self.API_SERVER + self.USERS_METHOD
         user_id_dict = get_dict_for_load_data(user_server, users_get_params)
         
-        if self.error_handler(user_id_dict):
+        if error_handler(user_id_dict):
             print('Пройдите по адресу для получения токена: {}'.format(self.create_straddres_for_token_extraction()))
             return user_id_tmp
 
