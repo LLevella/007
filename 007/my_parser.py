@@ -100,7 +100,7 @@ class CommandParser:
         else: 
             vk_request = VkRequests(user_id = self.namespace.id)
         self.data_loader = DataLoader(vk_request)
-        #self.data_loader.mp_load()
+        #self.data_loader.load()
         self.data_loader.mp_load()
         return True
     
