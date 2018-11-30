@@ -8,21 +8,21 @@ import time
 SEC = 1
 NSEC = 10
 
+def print_int_one_line(str = "", eqv = "", end = " "):
+    print("\r\x1b[K {} {}".format(str, eqv), end = end)
+    sys.stdout.flush()
+
 def sleeper(sec):
     time.sleep(sec)
     return sec + 1
 
-def error_handler(dict, end= ""):
+def error_handler(dict):
     if not dict:
-        print("\r\x1b[K Request Exeption", end)
-        sys.stdout.flush()
         return True, 0
     if 'error' in dict:
-        print("\r\x1b[K {}".format(dict['error']['error_msg']), end)
-        sys.stdout.flush()
+        print_int_one_line(str = dict['error']['error_msg'])
         return True, dict['error']['error_code']
     return False, 0
-
 
 def request_decorator (func_request):
     def wrapper(*args, **kwargs):
@@ -30,41 +30,35 @@ def request_decorator (func_request):
         nsec = NSEC
         while sec < nsec:
             req_dict = func_request(*args, **kwargs)
-            # print(dict)
             has_error, error_code = error_handler(req_dict)
             if has_error: 
-                if error_code!= 6:
+                if error_code != 6:
                     return 
             else:
                 return req_dict
             sec = sleeper(sec)
-            print("request_decorator: {}".format(sec))
         return 
     return wrapper
     
 @request_decorator
-def get_dict_for_load_data(server_name, params_data,  end= ""):
+def get_dict_for_load_data(server_name, params_data):
     sec = SEC 
     nsec = NSEC
     while sec < nsec:
         try:
             requests_data = requests.get(server_name, params=params_data)
-        except requests.exceptions.ConnectionError as e:
-            print("\r\x1b[K {}".format(e), end)
-            sys.stdout.flush()
+        except requests.exceptions.ConnectionError:
+            print_int_one_line(str = 'ConnectionError')
             sec = sleeper(sec)
-        except requests.exceptions.Timeout as e:
-            print("\r\x1b[K {}".format(e), end)
-            sys.stdout.flush()
+        except requests.exceptions.Timeout:
+            print_int_one_line(str = 'Timeout')
             sec = sleeper(sec)
-        except requests.exceptions.RequestException as e:
-            print("\r\x1b[K {}".format(e), end)
-            sys.stdout.flush()
+        except requests.exceptions.RequestException:
+            print_int_one_line(str = 'Request Exception')
             sec = sleeper(sec)
         else:
             dict_from_request = requests_data.json()
             return dict_from_request
-        print("get_dict_for_load_data: {}".format(sec))
     return 
 
 class VkRequests:

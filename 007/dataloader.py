@@ -66,22 +66,23 @@ class DataLoader:
             if user_groups_set == "END":
                 break
             self.groups_differ.difference_update(user_groups_set)
-            self.groups_intersections.put(self.user_groups.intersection(user_groups_set))
+            group_intersection = self.user_groups.intersection(user_groups_set)
+            self.groups_intersections.put(group_intersection)
         self.groups_intersections.put("END")
         self.print_data_with_lock("Groups_handler закончил обработку")
 
     def intersections_handler(self):
         while True:
-            groups_intersection = self.groups_intersections.get()
-            if groups_intersection == "END":
+            group_intersection = self.groups_intersections.get()
+            if group_intersection == "END":
                 break
-            self.count_users_in_acrossing_groups(groups_intersection)
+            self.count_users_in_acrossing_groups(group_intersection)
         self.print_data_with_lock("Intersections_handler закончил обработку")
 
-    def count_users_in_acrossing_groups(self, groups_intersection):
-        if groups_intersection:
-            self.print_data_without_lock(groups_intersection)
-        for group in groups_intersection:
+    def count_users_in_acrossing_groups(self, group_intersection):
+        if group_intersection:
+            self.print_data_without_lock(group_intersection)
+        for group in group_intersection:
                 self.groups_dict[group] += 1
 
     def print_data_with_lock(self, str="", eqv = "", end = "\n", is_flush = False):
