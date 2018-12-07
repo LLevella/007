@@ -1,6 +1,7 @@
+from pprint import pprint
 import sys
 import time
-from multiprocessing import Process, Queue, Lock
+from multiprocessing import Process, Queue, Lock, Manager
 from datarequests import VkRequests, sleeper
 
 
@@ -36,8 +37,11 @@ class DataLoader:
     def __init__(self, requester):
         self.requester = requester
         self.groups = Queue()
-        self.groups_intersections = Queue()
+        self.intersections = Queue()
         self.lock = Lock()
+        self.manager = Manager()
+        self.groups_differ = self.manager.list()
+        self.groups_dict = self.manager.dict()
 
     def loader(self):
         friends_count = self.friends_count
@@ -46,7 +50,7 @@ class DataLoader:
             if not user_groups_dict:
               friends_count -= 1
               continue
-            
+
             user_groups_count, user_groups_set = get_set_and_count_from_dict(user_groups_dict)
             if not user_groups_count or not user_groups_set:
               friends_count -= 1
@@ -57,6 +61,7 @@ class DataLoader:
             self.print_data_without_lock("\r\x1b[K->загрузка групп: осталось ", int(100*friends_count/self.friends_count),  is_flush = True, end = "%")
             if friends_count < 1:
                 break
+
         self.groups.put("END")
         self.print_data_with_lock("\nLoader закончил загрузку")
 
@@ -65,23 +70,28 @@ class DataLoader:
             user_groups_set = self.groups.get()
             if user_groups_set == "END":
                 break
-            self.groups_differ.difference_update(user_groups_set)
-            group_intersection = self.user_groups.intersection(user_groups_set)
-            self.groups_intersections.put(group_intersection)
-        self.groups_intersections.put("END")
+
+            group_set = self.groups_differ[0]
+            group_set.difference_update(user_groups_set)
+            self.groups_differ[0] = group_set
+
+            group_intersection = self.groups_differ[1]
+            group_intersection.intersection_update(user_groups_set)
+            self.intersections.put(group_intersection)
+
+        self.intersections.put("END")
         self.print_data_with_lock("Groups_handler закончил обработку")
 
     def intersections_handler(self):
         while True:
-            group_intersection = self.groups_intersections.get()
+            group_intersection = self.intersections.get()
             if group_intersection == "END":
                 break
-            self.count_users_in_acrossing_groups(group_intersection)
+            self.count_users_in_acrossing_groups(group_intersection) 
         self.print_data_with_lock("Intersections_handler закончил обработку")
 
+
     def count_users_in_acrossing_groups(self, group_intersection):
-        if group_intersection:
-            self.print_data_without_lock(group_intersection)
         for group in group_intersection:
                 self.groups_dict[group] += 1
 
@@ -107,8 +117,7 @@ class DataLoader:
             return False
         self.friends = friends_list
         self.friends_count = friends_count
-        # print(self.friends, self.friends_count)
-       
+
         user_groups_dict = self.requester.get_groups_from_request()
         print("Заугржен список групп пользователя")
         if not user_groups_dict:
@@ -117,29 +126,36 @@ class DataLoader:
         if not user_groups_count or not user_groups_set:
             return False
             
-        self.user_groups = user_groups_set
+        self.groups_differ.append(user_groups_set)
+        self.groups_differ.append(user_groups_set)
+        dict_tmp = dict.fromkeys(user_groups_set, 0)
+        self.groups_dict = self.manager.dict(dict_tmp)
         self.user_groups_count = user_groups_count
-        self.groups_differ = user_groups_set
-        self.groups_dict = dict.fromkeys(user_groups_set, 0)
 
     def load(self): # последовательная процедура
         self.init_load()        
         friends_count = self.friends_count
         for friend in self.friends:
             user_groups_dict = self.requester.get_groups_from_request(friend)
+                
             if not user_groups_dict:
               friends_count -= 1
               continue
+              
             user_groups_count, user_groups_set = get_set_and_count_from_dict(user_groups_dict)
+
             if not user_groups_count or not user_groups_set:
               friends_count -= 1
               continue
-              
-            self.groups_differ.difference_update(user_groups_set)
-            
-            groups_intersection = self.user_groups.intersection(user_groups_set)
+            group_set = self.groups_differ[0]
+            group_set.difference_update(user_groups_set)
+            self.groups_differ[0] = group_set
 
-            self.count_users_in_acrossing_groups(groups_intersection)
+            group_intersection = self.groups_differ[1]
+            group_intersection.intersection_update(user_groups_set)
+
+            self.count_users_in_acrossing_groups(group_intersection)
+                
             friends_count -= 1
             print("\r\x1b[K друзей осталось {}".format(friends_count), end= "")
             sys.stdout.flush()
@@ -163,6 +179,7 @@ class DataLoader:
         for proc in procs:
             proc.join()
 
+
     def get_intersection(self, N = 10, eqv = "<"):
         str_group_ids = ""
         if (eqv == "="):
@@ -178,7 +195,7 @@ class DataLoader:
         return str_group_ids
 
     def get_differ_str(self):
-        str_group_ids = ', '.join(str(s) for s in self.groups_differ)
+        str_group_ids = ', '.join(str(s) for s in self.groups_differ[0])
         return str_group_ids
 
     def result_of_intersection(self, N = 10, eqv = "<"):
@@ -189,8 +206,7 @@ class DataLoader:
         return inter_groups_dict
 
     def result_dict_of_intersection(self):
-        print (self.groups_dict)
-        return self.groups_dict
+        return dict(self.groups_dict)
     
     def result_of_defferencial(self):
         str_diff = self.get_differ_str()

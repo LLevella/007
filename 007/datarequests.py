@@ -77,7 +77,12 @@ class VkRequests:
             self.user_id = user_id
         elif user_name:
             self.user_id = self.get_user_id_from_request(user_name)
+            if self.user_id == 0:
+                print('Пройдите по адресу для получения токена: {}'.format(self.create_straddres_for_token_extraction()))
     
+    def init_failed(self):
+        return (self.user_id == 0)
+
     def create_straddres_for_token_extraction(self):
         auth_data = {
             'client_id': self.APP_ID,
@@ -98,11 +103,8 @@ class VkRequests:
         user_id_tmp = 0
         user_server = self.API_SERVER + self.USERS_METHOD
         user_id_dict = get_dict_for_load_data(user_server, users_get_params)
-        
-        if error_handler(user_id_dict):
-            print('Пройдите по адресу для получения токена: {}'.format(self.create_straddres_for_token_extraction()))
-            return user_id_tmp
-
+        if not user_id_dict:
+            return 0
         if user_id_dict['response']:
             if user_id_dict['response'][0]:
                 if user_id_dict['response'][0]['id']:
