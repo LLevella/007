@@ -1,10 +1,65 @@
-
 import requests
 import urllib
 import json
 import pprint
 import sys
+import time
 
+SEC = 1
+NSEC = 10
+
+def print_int_one_line(str = "", eqv = "", end = " "):
+    print("\r\x1b[K {} {}".format(str, eqv), end = end)
+    sys.stdout.flush()
+
+def sleeper(sec):
+    time.sleep(sec)
+    return sec + 1
+
+def error_handler(dict):
+    if not dict:
+        return True, 0
+    if 'error' in dict:
+        print_int_one_line(str = dict['error']['error_msg'])
+        return True, dict['error']['error_code']
+    return False, 0
+
+def request_decorator (func_request):
+    def wrapper(*args, **kwargs):
+        sec = SEC
+        nsec = NSEC
+        while sec < nsec:
+            req_dict = func_request(*args, **kwargs)
+            has_error, error_code = error_handler(req_dict)
+            if has_error: 
+                if error_code != 6:
+                    return 
+            else:
+                return req_dict
+            sec = sleeper(sec)
+        return 
+    return wrapper
+    
+@request_decorator
+def get_dict_for_load_data(server_name, params_data):
+    sec = SEC 
+    nsec = NSEC
+    while sec < nsec:
+        try:
+            requests_data = requests.get(server_name, params=params_data)
+        except requests.exceptions.ConnectionError:
+            print_int_one_line(str = 'ConnectionError')
+            sec = sleeper(sec)
+        except requests.exceptions.Timeout:
+            print_int_one_line(str = 'Timeout')
+            sec = sleeper(sec)
+        except requests.exceptions.RequestException:
+            print_int_one_line(str = 'Request Exception')
+            sec = sleeper(sec)
+        else:
+            dict_from_request = requests_data.json()
+            return dict_from_request
+    return 
 
 class VkRequests:
     APP_ID = '6633040'
@@ -14,6 +69,7 @@ class VkRequests:
     FRIENDS_METHOD = 'friends.get'
     USERS_METHOD = 'users.get'
     GROUPS_METHOD = 'groups.get'
+    GROUPS_NAME_METHOD = 'groups.getById'
     TOKEN = 'ed1271af9e8883f7a7c2cefbfddfcbc61563029666c487b2f71a5227cce0d1b533c4af4c5b888633c06ae'
 
     def __init__(self, user_id = 0, user_name = ""):
@@ -21,7 +77,12 @@ class VkRequests:
             self.user_id = user_id
         elif user_name:
             self.user_id = self.get_user_id_from_request(user_name)
+            if self.user_id == 0:
+                print('Пройдите по адресу для получения токена: {}'.format(self.create_straddres_for_token_extraction()))
     
+    def init_failed(self):
+        return (self.user_id == 0)
+
     def create_straddres_for_token_extraction(self):
         auth_data = {
             'client_id': self.APP_ID,
@@ -33,36 +94,22 @@ class VkRequests:
             }
         return '?'.join((self.AUTH_SERVER, urllib.parse.urlencode(auth_data)))
 
-    def error_handler(self, f):
-        def wrapper (self, *args, **kwargs):
-            dict = f(*args, **kwargs)
-            if 'error' in dict:
-              print(dict['error']['error_msg'])
-              print('Пройдите по адресу для получения токена: {}'.format(self.create_straddres_for_token_extraction()))
-            return dict
-        return wrapper
-
-    @error_handler
-    def get_dict_for_load_data(self, server_name, params_data):
-        requests_data = requests.get(server_name, params=params_data)
-        dict_from_request = requests_data.json()
-        return dict_from_request
-
     def get_user_id_from_request(self, user_name):
         users_get_params = {
-            'user_id': user_name,
+            'user_ids': user_name,
+            'access_token': self.TOKEN,
             'v': self.API_VERSION
             }
         user_id_tmp = 0
         user_server = self.API_SERVER + self.USERS_METHOD
-        user_id_dict = self.get_dict_for_load_data(user_server, users_get_params)
+        user_id_dict = get_dict_for_load_data(user_server, users_get_params)
+        if not user_id_dict:
+            return 0
         if user_id_dict['response']:
             if user_id_dict['response'][0]:
                 if user_id_dict['response'][0]['id']:
                     user_id_tmp =  user_id_dict['response'][0]['id']
-            elif user_id_dict['response']['id']:
-                user_id_tmp = user_id_dict['response']['id']
-
+        
         return user_id_tmp
 
     def get_friends_from_request(self):
@@ -72,18 +119,33 @@ class VkRequests:
             'v': self.API_VERSION
             }
         friends_server = self.API_SERVER + self.FRIENDS_METHOD
-        self.users_friends_id_dict = self.get_dict_for_load_data(friends_server, friends_get_params)
+        self.users_friends_id_dict = get_dict_for_load_data(friends_server, friends_get_params)
         return self.users_friends_id_dict
 
-    def get_groups_from_request(self, user_id = 0, count = 1000):
+    def get_groups_from_request(self, user_id = 0, count = 1000, extended = 0):
         if not user_id or user_id == 0:
           user_id = self.user_id
-
         groups_get_params = {
             'user_id': user_id,
+            'access_token': self.TOKEN,
             'v': self.API_VERSION,
-            'count': count
+            'count': count,
+            'extended': extended
             }
         groups_server = self.API_SERVER + self.GROUPS_METHOD
-        self.users_groups_id_dict = self.get_dict_for_load_data(groups_server, groups_get_params)
+        self.users_groups_id_dict = get_dict_for_load_data(groups_server, groups_get_params)
         return self.users_groups_id_dict
+
+    def get_group_data_from_request(self, sgroup_ids = ""):
+        if not sgroup_ids:
+            return
+        groups_get_params = {
+            'group_ids': sgroup_ids,
+            'access_token': self.TOKEN,
+            'v': self.API_VERSION
+            }
+        groups_server = self.API_SERVER + self.GROUPS_NAME_METHOD
+        self.users_groups_id_dict = get_dict_for_load_data(groups_server, groups_get_params)
+        return self.users_groups_id_dict
+
+
